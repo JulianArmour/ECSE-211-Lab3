@@ -103,11 +103,45 @@ public class Lab {
 		// start display thread
 		new Thread(odometryDisplay).start();
 		
+		// used to track which way-point to head towards next
 		int currentWaypoint = 0;
-		// Main loop for moving to each waypoint
-		while (navigator.getNavigationState() != NavigatorState.end) {
-			if (navigator.getNavigationState() == NavigatorState.start) {
-				navigator.setState(NavigatorState.navigating);
+		
+		/* Main loop for moving to each waypoint.
+		 * Manages specific states: the start, after reaching a waypoint, or reaching the last waypoint.
+		 * 
+		 */
+		while (true) {
+			NavigatorState navState = navigator.getNavigationState();
+			
+			Thread navThread = new Thread(navigator);
+			Navigation.setNavThread(navThread);
+			
+			if (navState == NavigatorState.start || navState == NavigatorState.navigating) {
+				double destX = map[currentWaypoint][0] * TILE_SIZE;
+				double destY = map[currentWaypoint][1] * TILE_SIZE;
+				navigator.travelTo(destX, destY);
+			}
+			else if (navState == NavigatorState.atWaypoint) {
+				currentWaypoint++;
+				if (currentWaypoint < map.length) {
+					double destX = map[currentWaypoint][0] * TILE_SIZE;
+					double destY = map[currentWaypoint][1] * TILE_SIZE;
+					navigator.travelTo(destX, destY);
+				}
+				else {
+					navigator.setState(NavigatorState.end);
+					break;
+				}
+			}
+			
+			
+			navThread.start();
+			
+			// wait for navigation to end or if an obstacle presents itself
+			try {
+				navThread.join();
+			} catch (InterruptedException e) {
+				System.out.println("Houston we have a problem.");
 			}
 		}
 		
@@ -117,12 +151,5 @@ public class Lab {
 
 		while (Button.waitForAnyPress() != Button.ID_ESCAPE);
 		System.exit(0);
-	}
-	
-	public static double[] waypointConverter(double[] wp) {
-		double[] converted = {0.0, 0.0};
-		converted[0] = TILE_SIZE * wp[0];
-		converted[1] = TILE_SIZE * wp[1];
-		return converted;
 	}
 }
