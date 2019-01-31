@@ -128,6 +128,49 @@ public class Navigation implements Runnable {
 				
 				state = NavigatorState.atWaypoint;
 			}
+			else if(state == NavigatorState.avoiding) {
+				//conditions to turn right
+				if(((robotPos[2]  >= 350 || robotPos[2] <= 10)  && (robotPos[0]>=-5 && robotPos[0]<=5))  ||
+					((robotPos[2] >= 170 || robotPos[2] <= 190) && (robotPos[0]>=56 && robotPos[0]<=66)) ||
+					((robotPos[2] >= 80  || robotPos[2] <= 100) && (robotPos[1]>=56 && robotPos[1]<=66)) ||
+					((robotPos[2] >= 260 || robotPos[2] <= 280) && (robotPos[1]>=-5 && robotPos[1]<=5))
+					{     
+					
+					rotateAngle(90, true);    //turn right 90 degrees
+					//go straight 1440 degrees
+					state = NavigatorState.navigating; //changes to the navigating state
+					
+				}
+				//conditions to turn left
+				else if(((robotPos[2] >= 350 || robotPos[2] <= 10)  && (robotPos[0]>=56 && robotPos[0]<=66)) ||
+						((robotPos[2] >= 170 || robotPos[2] <= 190) && (robotPos[0]>=-5 && robotPos[0]<=5))  ||
+						((robotPos[2] >= 80  || robotPos[2] <= 100) && (robotPos[1]>=-5 && robotPos[1]<=5))  ||
+						((robotPos[2] >= 260 || robotPos[2] <= 280) && (robotPos[1]>=65 && robotPos[1]<=66))
+						{ 
+					
+					rotateAngle(90,false);   		//turn left 90 degrees
+					//go straight 1400 degrees
+					state = NavigatorState.navigating; //changes to the navigating state
+				}
+				else {
+					
+					rotateAngle(40,true);
+					if (USSensor.median >= 15){ //getfiltereddistance
+						rotateAngle(20,true);
+						//move forward 1440 degrees 
+						state = NavigatorState.navigating; //changes to the navigating state
+					}
+					else {
+						while(USSensor.median < 15) {
+						rotateAngle(15,false);
+						}
+						rotateAngle(20,false);
+						//move forward 1440 degrees
+						state = NavigatorState.navigating; //changes to the navigating state
+					}
+					
+				}
+			}
 		} catch (InterruptedException e) {
 			leftMotor.stop(true);
 			rightMotor.stop(false);
