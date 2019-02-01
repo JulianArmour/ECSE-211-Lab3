@@ -154,6 +154,8 @@ public class Navigation implements Runnable {
 				}
 				else {					
 					rotateAngle(40,true);
+					// gather ~10 samples
+					Thread.sleep(1000);
 					if (usSensor.getFilteredDistance() >= 15){ //getfiltereddistance
 						rotateAngle(20,true);
 						//move forward 1440 degrees 

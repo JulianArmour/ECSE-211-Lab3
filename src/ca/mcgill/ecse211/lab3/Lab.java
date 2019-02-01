@@ -134,7 +134,6 @@ public class Lab {
 				}
 			}
 			
-			
 			navThread.start();
 			
 			// wait for navigation to end or if an obstacle presents itself
