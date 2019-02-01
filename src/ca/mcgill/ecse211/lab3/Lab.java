@@ -6,6 +6,7 @@ import lejos.hardware.Button;
 import lejos.hardware.ev3.LocalEV3;
 import lejos.hardware.lcd.TextLCD;
 import lejos.hardware.motor.EV3LargeRegulatedMotor;
+import lejos.hardware.motor.NXTRegulatedMotor;
 import lejos.hardware.port.Port;
 import lejos.hardware.sensor.EV3ColorSensor;
 import lejos.hardware.sensor.EV3UltrasonicSensor;
@@ -20,6 +21,7 @@ public class Lab {
 	// Motor Objects, and Robot related parameters
 	private static final EV3LargeRegulatedMotor leftMotor = new EV3LargeRegulatedMotor(LocalEV3.get().getPort("A"));
 	private static final EV3LargeRegulatedMotor rightMotor = new EV3LargeRegulatedMotor(LocalEV3.get().getPort("B"));
+	private static final NXTRegulatedMotor sweepMotor = new NXTRegulatedMotor(LocalEV3.get().getPort("D"));
 
 	private static final TextLCD lcd = LocalEV3.get().getTextLCD();
 	public static final double TILE_SIZE = 30.48;
@@ -48,7 +50,7 @@ public class Lab {
 		leftMotor.setAcceleration(MOTOR_ACCELERATION);
 		rightMotor.setAcceleration(MOTOR_ACCELERATION);
 		
-		portUS = LocalEV3.get().getPort("S1");
+		portUS = LocalEV3.get().getPort("S2");
 		us = new EV3UltrasonicSensor(portUS);
 		distanceProvider = us.getMode("Distance");
 		sampleUS = new float[distanceProvider.sampleSize()];
@@ -68,6 +70,9 @@ public class Lab {
 		
 		Timer distancePollerTimer = new Timer(DISTANCE_POLL_PERIOD, distanceSensor);
 		distancePollerTimer.start();
+		
+		SensorSweeper sweeper = new SensorSweeper(sweepMotor);
+		sweeper.start();
 
 		do {
 			// clear the display
@@ -102,6 +107,7 @@ public class Lab {
 		
 		// start display thread
 		new Thread(odometryDisplay).start();
+		
 		
 		// used to track which way-point to head towards
 		int currentWaypoint = 0;

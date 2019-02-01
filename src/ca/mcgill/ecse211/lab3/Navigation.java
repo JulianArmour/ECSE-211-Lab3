@@ -7,7 +7,7 @@ public class Navigation implements Runnable {
 
 	private static final int ROTATE_SPEED = 150;
 	private static final int FORWARD_SPEED = 250;
-	private static final int AVOIDING_DIST = 1001; //how much the wheels rotate to avoid
+	private static final int AVOIDING_DIST = 3*360; //how much the wheels rotate to avoid
 	private static volatile NavigatorState state;
 	private static Thread navThread;
 	private double[] destination = {0.0, 0.0};
@@ -141,9 +141,13 @@ public class Navigation implements Runnable {
 					((robotPos[2] >= 260 || robotPos[2] <= 280) && (robotPos[1]>=-5 && robotPos[1]<=5)))
 					{     
 					
-					rotateAngle(90, true);    //turn right 90 degrees
+					rotateAngle(80, true);    //turn right 90 degrees
 					leftMotor.rotate(AVOIDING_DIST,true);    //go straight 1400 degrees
 					rightMotor.rotate(AVOIDING_DIST,false);
+					
+					rotateAngle(80, false);
+					leftMotor.rotate(AVOIDING_DIST/2,true);    //go straight 1400 degrees
+					rightMotor.rotate(AVOIDING_DIST/2,false);					
 					state = NavigatorState.navigating; //changes to the navigating state
 					
 				}
@@ -154,10 +158,15 @@ public class Navigation implements Runnable {
 						((robotPos[2] >= 260 || robotPos[2] <= 280) && (robotPos[1]>=65 && robotPos[1]<=66)))
 						{ 
 					
-					rotateAngle(90,false);   		//turn left 90 degrees
+					rotateAngle(80,false);   		//turn left 90 degrees
 					
 					leftMotor.rotate(AVOIDING_DIST,true);    //go straight 1400 degrees
 					rightMotor.rotate(AVOIDING_DIST,false);
+					
+					rotateAngle(80, true);
+					leftMotor.rotate(AVOIDING_DIST/2,true);    //go straight 1400 degrees
+					rightMotor.rotate(AVOIDING_DIST/2,false);
+					
 					state = NavigatorState.navigating; //changes to the navigating state
 				}
 				else {					
@@ -169,6 +178,11 @@ public class Navigation implements Runnable {
 						
 						leftMotor.rotate(AVOIDING_DIST,true);    //go straight 1400 degrees
 						rightMotor.rotate(AVOIDING_DIST,false);
+						
+						rotateAngle(60, false);
+						leftMotor.rotate(AVOIDING_DIST/2,true);    //go straight 1400 degrees
+						rightMotor.rotate(AVOIDING_DIST/2,false);
+						
 						state = NavigatorState.navigating; //changes to the navigating state
 					}
 					else {
@@ -178,6 +192,10 @@ public class Navigation implements Runnable {
 						rotateAngle(15,false);
 						leftMotor.rotate(AVOIDING_DIST,true);    //go straight 1400 degrees
 						rightMotor.rotate(AVOIDING_DIST,false);
+						
+						rotateAngle(60, true);
+						leftMotor.rotate(AVOIDING_DIST/2,true);    //go straight 1400 degrees
+						rightMotor.rotate(AVOIDING_DIST/2,false);
 						
 						state = NavigatorState.navigating; //changes to the navigating state
 					}
