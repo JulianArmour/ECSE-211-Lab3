@@ -7,7 +7,7 @@ public class Navigation implements Runnable {
 
 	private static final int ROTATE_SPEED = 150;
 	private static final int FORWARD_SPEED = 250;
-	private static final int AVOIDING_DIST = 920; //how much the wheels rotate to avoid
+	private static final int AVOIDING_DIST = 1001; //how much the wheels rotate to avoid
 	private static volatile NavigatorState state;
 	private static Thread navThread;
 	private double[] destination = {0.0, 0.0};
