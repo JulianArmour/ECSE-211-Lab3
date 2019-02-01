@@ -162,8 +162,8 @@ public class Navigation implements Runnable {
 					if (usSensor.getFilteredDistance() >= 15){ //getfiltereddistance
 						rotateAngle(20,true);
 						
-						leftMotor.rotate(1440);    //go straight 1400 degrees
-						rightMotor.rotate(1440);
+						leftMotor.rotate(1440,true);    //go straight 1400 degrees
+						rightMotor.rotate(1440,false);
 						state = NavigatorState.navigating; //changes to the navigating state
 					}
 					else {
@@ -171,8 +171,8 @@ public class Navigation implements Runnable {
 						rotateAngle(15,false);
 						}
 						rotateAngle(20,false);
-						leftMotor.rotate(1440);    //go straight 1400 degrees
-						rightMotor.rotate(1440);
+						leftMotor.rotate(1440,true);    //go straight 1400 degrees
+						rightMotor.rotate(1440,false);
 						
 						state = NavigatorState.navigating; //changes to the navigating state
 					}
