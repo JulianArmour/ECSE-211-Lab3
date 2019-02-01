@@ -26,10 +26,10 @@ public class Lab {
 	// The radius of the wheels in cm
 	public static final double WHEEL_RAD = 2.1; // Radius increase = distance decrease
 	// The distance between both wheels in cm
-	public static final double TRACK = 10.8; // Width decrease = turn angle increase
+	public static final double TRACK = 11.0; // Width decrease = turn angle increase
 	private static final int MOTOR_ACCELERATION = 1000;
 
-	private static final int DISTANCE_POLL_PERIOD = 100;
+	private static final int DISTANCE_POLL_PERIOD = 500;
 
 	// defined port and sensor
 	private static  Port portUS;
@@ -103,7 +103,7 @@ public class Lab {
 		// start display thread
 		new Thread(odometryDisplay).start();
 		
-		// used to track which way-point to head towards next
+		// used to track which way-point to head towards
 		int currentWaypoint = 0;
 		
 		/* Main loop for moving to each waypoint.

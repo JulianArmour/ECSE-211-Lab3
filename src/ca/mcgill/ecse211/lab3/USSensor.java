@@ -10,7 +10,7 @@ public class USSensor implements TimerListener{
 	
 	private static final int BLOCK_THRESHOLD = 15;
 	private int[] pastData;
-	private volatile int median;
+	private int median;
 	private SampleProvider USPoller;
 	private float[] USData;
 	private Navigation navigator;
@@ -29,7 +29,7 @@ public class USSensor implements TimerListener{
 		USPoller.fetchSample(USData, 0);
 //		System.out.println(USData[0]*100);
 		// shift the past data to the left in the array
-		for (int i = 0; i < pastData.length - 2; i++) {
+		for (int i = 0; i < pastData.length - 1; i++) {
 			pastData[i] = pastData[i+1];
 		}
 		// add the sample to end of pastData
@@ -37,13 +37,17 @@ public class USSensor implements TimerListener{
 		// calculate the median
 		median = calculateMedian(pastData.clone());
 		
+//		System.out.println(median);
+		
 		if (navigator.isNavigating() && median < BLOCK_THRESHOLD) {
-			navigator.avoidObstacle();
+			System.out.println("OBSTACLE");
+			navigator.avoidObstacle();			
 		}
 	}
 	
 	public int getFilteredDistance() {
 		return median;
+//		return 255; // for testing
 	}
 	
 	private static int calculateMedian(int[] data) {

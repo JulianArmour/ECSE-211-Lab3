@@ -9,7 +9,7 @@ public class Navigation implements Runnable {
 	private static final int FORWARD_SPEED = 250;
 	private static volatile NavigatorState state;
 	private static Thread navThread;
-	private double[] destination;
+	private double[] destination = {0.0, 0.0};
 	private EV3LargeRegulatedMotor leftMotor;
 	private EV3LargeRegulatedMotor rightMotor;
 	private Odometer odometer;
@@ -24,11 +24,11 @@ public class Navigation implements Runnable {
 		this.odometer = odometer;
 		this.wheelRadius = wheelRadius;
 		this.track = track;
-		this.usSensor = usSensor;
 		state = NavigatorState.start;
 	}
 
 	public void travelTo(double x, double y) {
+//		System.out.println("moving to X: "+x+"\t Y: "+y);
 		destination[0] = x;
 		destination[1] = y;
 		state = NavigatorState.navigating;
@@ -107,22 +107,22 @@ public class Navigation implements Runnable {
 					}
 				}
 				// first quadrant (0-90)
-				else if (dx > 0.0 && dy > 0.0) {
+				else if (dx >= 0.0 && dy > 0.0) {
 					angleToHead = Math.toDegrees(Math.atan(dx / dy));
 				}
 				// second quadrant (270-360)
 				else if (dx < 0.0 && dy > 0.0) {
-					angleToHead = Math.toDegrees(360 + Math.atan(dx / dy));
+					angleToHead = 360.0 + Math.toDegrees(Math.atan(dx / dy));
 				}
 				// third and fourth quadrant (90-270)
 				else {
-					angleToHead = Math.toDegrees(180 + Math.atan(dx / dy));
+					angleToHead = 180.0 + Math.toDegrees(Math.atan(dx / dy));
 				}
 
 				turnTo(angleToHead);
 				
-				// poll data for 0.5 second
-				Thread.sleep(500);
+				// poll data for 1/4 second
+				Thread.sleep(250);
 
 				driveForward(distanceToWaypoint);
 				
