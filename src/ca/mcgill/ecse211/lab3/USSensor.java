@@ -8,7 +8,7 @@ import lejos.utility.TimerListener;
 public class USSensor implements TimerListener{
 	
 	
-	private static final int BLOCK_THRESHOLD = 15;
+	private static final int BLOCK_THRESHOLD = 15; //
 	private int[] pastData;
 	private int median;
 	private SampleProvider USPoller;
