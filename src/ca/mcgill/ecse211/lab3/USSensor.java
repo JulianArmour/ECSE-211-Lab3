@@ -37,7 +37,7 @@ public class USSensor implements TimerListener{
 		// calculate the median
 		median = calculateMedian(pastData.clone());
 		
-//		System.out.println(median);
+//		System.out.println(navigator.getNavigationState());
 		
 		if (navigator.isNavigating() && median < BLOCK_THRESHOLD) {
 			System.out.println("OBSTACLE");

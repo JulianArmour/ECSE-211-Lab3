@@ -73,10 +73,10 @@ public class Navigation implements Runnable {
 	}
 
 	public void avoidObstacle() {
-		state = NavigatorState.avoiding;
+		state = NavigatorState.avoiding;		
+		navThread.interrupt();
 		leftMotor.stop(true);
 		rightMotor.stop(false);
-		navThread.interrupt();
 	}
 
 	/*
@@ -129,7 +129,9 @@ public class Navigation implements Runnable {
 
 				driveForward(distanceToWaypoint);
 				
-				state = NavigatorState.atWaypoint;
+				if (state != NavigatorState.avoiding) {
+					state = NavigatorState.atWaypoint;
+				}				
 			}
 			else if(state == NavigatorState.avoiding) {
 				//conditions to turn right

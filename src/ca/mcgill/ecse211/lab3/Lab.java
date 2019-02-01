@@ -29,7 +29,7 @@ public class Lab {
 	public static final double TRACK = 11.0; // Width decrease = turn angle increase
 	private static final int MOTOR_ACCELERATION = 1000;
 
-	private static final int DISTANCE_POLL_PERIOD = 500;
+	private static final int DISTANCE_POLL_PERIOD = 100;
 
 	// defined port and sensor
 	private static  Port portUS;
@@ -112,6 +112,8 @@ public class Lab {
 		 */
 		while (true) {
 			NavigatorState navState = navigator.getNavigationState();
+			
+			System.out.println(navState);
 			
 			Thread navThread = new Thread(navigator);
 			Navigation.setNavThread(navThread);
