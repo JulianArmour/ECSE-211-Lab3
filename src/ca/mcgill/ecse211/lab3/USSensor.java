@@ -41,7 +41,7 @@ public class USSensor implements TimerListener{
 		
 		if (navigator.isNavigating() && median < BLOCK_THRESHOLD) {
 			System.out.println("OBSTACLE");
-			navigator.avoidObstacle();			
+			navigator.avoidObstacle();
 		}
 	}
 	

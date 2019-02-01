@@ -73,6 +73,8 @@ public class Navigation implements Runnable {
 
 	public void avoidObstacle() {
 		state = NavigatorState.avoiding;
+		leftMotor.stop(true);
+		rightMotor.stop(false);
 		navThread.interrupt();
 	}
 
@@ -180,8 +182,9 @@ public class Navigation implements Runnable {
 				}
 			}
 		} catch (InterruptedException e) {
-			leftMotor.stop(true);
-			rightMotor.stop(false);
+			System.out.println("Stoping motors");
+//			leftMotor.stop(true);
+//			rightMotor.stop(false);
 		}
 	}
 
