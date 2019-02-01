@@ -2,7 +2,7 @@ package ca.mcgill.ecse211.lab3;
 
 import ca.mcgill.ecse211.odometer.Odometer;
 import lejos.hardware.motor.EV3LargeRegulatedMotor;
-
+//
 public class Navigation implements Runnable {
 
 	private static final int ROTATE_SPEED = 150;
