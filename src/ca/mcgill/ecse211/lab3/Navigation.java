@@ -32,7 +32,7 @@ public class Navigation implements Runnable {
 //		System.out.println("moving to X: "+x+"\t Y: "+y);
 		destination[0] = x;
 		destination[1] = y;
-		state = NavigatorState.navigating;
+		state = NavigatorState.rotating;
 	}
 
 	public void turnTo(double theta) {
@@ -94,7 +94,8 @@ public class Navigation implements Runnable {
 		 */
 		try {
 			double[] robotPos = odometer.getXYT();
-			if (state == NavigatorState.navigating) {				
+			
+			if (state == NavigatorState.rotating) {
 				double dx = destination[0] - robotPos[0];
 				double dy = destination[1] - robotPos[1];
 
@@ -124,6 +125,16 @@ public class Navigation implements Runnable {
 
 				turnTo(angleToHead);
 				
+				if (state != NavigatorState.avoiding) {
+					state = NavigatorState.navigating;
+				}				
+			}			
+			else if (state == NavigatorState.navigating) {
+				double dx = destination[0] - robotPos[0];
+				double dy = destination[1] - robotPos[1];
+
+				double distanceToWaypoint = Math.sqrt(dx * dx + dy * dy);
+				
 				// poll data for 1/4 second
 				Thread.sleep(250);
 
@@ -135,10 +146,10 @@ public class Navigation implements Runnable {
 			}
 			else if(state == NavigatorState.avoiding) {
 				//conditions to turn right
-				if(((robotPos[2]  >= 350 || robotPos[2] <= 10)  && (robotPos[0]>=-5 && robotPos[0]<=5))  ||
-					((robotPos[2] >= 170 || robotPos[2] <= 190) && (robotPos[0]>=56 && robotPos[0]<=66)) ||
-					((robotPos[2] >= 80  || robotPos[2] <= 100) && (robotPos[1]>=56 && robotPos[1]<=66)) ||
-					((robotPos[2] >= 260 || robotPos[2] <= 280) && (robotPos[1]>=-5 && robotPos[1]<=5)))
+				if(((robotPos[2]  >= 350 || robotPos[2] <= 10)  && (robotPos[0]<=10))  ||
+					((robotPos[2] >= 170 || robotPos[2] <= 190) && (robotPos[0]>= 51))  ||
+					((robotPos[2] >= 80  || robotPos[2] <= 100) && (robotPos[1]>= 51))  ||
+					((robotPos[2] >= 260 || robotPos[2] <= 280) && (robotPos[1]<=10)))
 					{     
 					
 					rotateAngle(80, true);    //turn right 90 degrees
@@ -148,14 +159,14 @@ public class Navigation implements Runnable {
 					rotateAngle(80, false);
 					leftMotor.rotate(AVOIDING_DIST/2,true);    //go straight 1400 degrees
 					rightMotor.rotate(AVOIDING_DIST/2,false);					
-					state = NavigatorState.navigating; //changes to the navigating state
+					state = NavigatorState.rotating; //changes to the navigating state
 					
 				}
 				//conditions to turn left
-				else if(((robotPos[2] >= 350 || robotPos[2] <= 10)  && (robotPos[0]>=56 && robotPos[0]<=66)) ||
-						((robotPos[2] >= 170 || robotPos[2] <= 190) && (robotPos[0]>=-5 && robotPos[0]<=5))  ||
-						((robotPos[2] >= 80  || robotPos[2] <= 100) && (robotPos[1]>=-5 && robotPos[1]<=5))  ||
-						((robotPos[2] >= 260 || robotPos[2] <= 280) && (robotPos[1]>=65 && robotPos[1]<=66)))
+				else if(((robotPos[2] >= 350 || robotPos[2] <= 10)  && (robotPos[0]>= 51 && robotPos[0]<=71))  ||
+						((robotPos[2] >= 170 || robotPos[2] <= 190) && (robotPos[0]>=-10 && robotPos[0]<=10))  ||
+						((robotPos[2] >= 80  || robotPos[2] <= 100) && (robotPos[1]>=-10 && robotPos[1]<=10))  ||
+						((robotPos[2] >= 260 || robotPos[2] <= 280) && (robotPos[1]>= 51 && robotPos[1]<=71)))
 						{ 
 					
 					rotateAngle(80,false);   		//turn left 90 degrees
@@ -167,7 +178,7 @@ public class Navigation implements Runnable {
 					leftMotor.rotate(AVOIDING_DIST/2,true);    //go straight 1400 degrees
 					rightMotor.rotate(AVOIDING_DIST/2,false);
 					
-					state = NavigatorState.navigating; //changes to the navigating state
+					state = NavigatorState.rotating; //changes to the navigating state
 				}
 				else {					
 					rotateAngle(40,true);
@@ -183,7 +194,7 @@ public class Navigation implements Runnable {
 						leftMotor.rotate(AVOIDING_DIST/2,true);    //go straight 1400 degrees
 						rightMotor.rotate(AVOIDING_DIST/2,false);
 						
-						state = NavigatorState.navigating; //changes to the navigating state
+						state = NavigatorState.rotating; //changes to the navigating state
 					}
 					else {
 						while(usSensor.getFilteredDistance() < 15) {
@@ -197,13 +208,13 @@ public class Navigation implements Runnable {
 						leftMotor.rotate(AVOIDING_DIST/2,true);    //go straight 1400 degrees
 						rightMotor.rotate(AVOIDING_DIST/2,false);
 						
-						state = NavigatorState.navigating; //changes to the navigating state
+						state = NavigatorState.rotating; //changes to the navigating state
 					}
 					
 				}
 			}
 		} catch (InterruptedException e) {
-			System.out.println("Stoping motors");
+//			System.out.println("Stoping motors");
 //			leftMotor.stop(true);
 //			rightMotor.stop(false);
 		}

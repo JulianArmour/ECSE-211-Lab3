@@ -124,7 +124,7 @@ public class Lab {
 			Thread navThread = new Thread(navigator);
 			Navigation.setNavThread(navThread);
 			
-			if (navState == NavigatorState.start || navState == NavigatorState.navigating) {
+			if (navState == NavigatorState.start || navState == NavigatorState.rotating) {
 				double destX = map[currentWaypoint][0] * TILE_SIZE;
 				double destY = map[currentWaypoint][1] * TILE_SIZE;
 				navigator.travelTo(destX, destY);

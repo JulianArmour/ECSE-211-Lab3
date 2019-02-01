@@ -10,6 +10,7 @@ public class SensorSweeper extends Thread {
 	
 	public SensorSweeper(NXTRegulatedMotor motor) {
 		this.motor = motor;
+//		System.out.println(motor.angle);
 	}
 
 	@Override
