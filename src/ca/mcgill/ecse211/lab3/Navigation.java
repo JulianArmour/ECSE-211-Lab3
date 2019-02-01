@@ -137,8 +137,8 @@ public class Navigation implements Runnable {
 					{     
 					
 					rotateAngle(90, true);    //turn right 90 degrees
-					leftMotor.rotate(1440);    //go straight 1400 degrees
-					rightMotor.rotate(1440);
+					leftMotor.rotate(1440,true);    //go straight 1400 degrees
+					rightMotor.rotate(1440,false);
 					state = NavigatorState.navigating; //changes to the navigating state
 					
 				}
@@ -151,8 +151,8 @@ public class Navigation implements Runnable {
 					
 					rotateAngle(90,false);   		//turn left 90 degrees
 					
-					leftMotor.rotate(1440);    //go straight 1400 degrees
-					rightMotor.rotate(1440);
+					leftMotor.rotate(1440,true);    //go straight 1400 degrees
+					rightMotor.rotate(1440,false);
 					state = NavigatorState.navigating; //changes to the navigating state
 				}
 				else {					
