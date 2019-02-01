@@ -7,6 +7,7 @@ public class Navigation implements Runnable {
 
 	private static final int ROTATE_SPEED = 150;
 	private static final int FORWARD_SPEED = 250;
+	private static final int AVOIDING_DIST = 720; //how much the wheels rotate to avoid
 	private static volatile NavigatorState state;
 	private static Thread navThread;
 	private double[] destination = {0.0, 0.0};
@@ -139,8 +140,8 @@ public class Navigation implements Runnable {
 					{     
 					
 					rotateAngle(90, true);    //turn right 90 degrees
-					leftMotor.rotate(720,true);    //go straight 1400 degrees
-					rightMotor.rotate(720,false);
+					leftMotor.rotate(AVOIDING_DIST,true);    //go straight 1400 degrees
+					rightMotor.rotate(AVOIDING_DIST,false);
 					state = NavigatorState.navigating; //changes to the navigating state
 					
 				}
@@ -153,8 +154,8 @@ public class Navigation implements Runnable {
 					
 					rotateAngle(90,false);   		//turn left 90 degrees
 					
-					leftMotor.rotate(720,true);    //go straight 1400 degrees
-					rightMotor.rotate(720,false);
+					leftMotor.rotate(AVOIDING_DIST,true);    //go straight 1400 degrees
+					rightMotor.rotate(AVOIDING_DIST,false);
 					state = NavigatorState.navigating; //changes to the navigating state
 				}
 				else {					
@@ -164,8 +165,8 @@ public class Navigation implements Runnable {
 					if (usSensor.getFilteredDistance() >= 15){ //getfiltereddistance
 						rotateAngle(20,true);
 						
-						leftMotor.rotate(720,true);    //go straight 1400 degrees
-						rightMotor.rotate(720,false);
+						leftMotor.rotate(AVOIDING_DIST,true);    //go straight 1400 degrees
+						rightMotor.rotate(AVOIDING_DIST,false);
 						state = NavigatorState.navigating; //changes to the navigating state
 					}
 					else {
@@ -173,8 +174,8 @@ public class Navigation implements Runnable {
 						rotateAngle(15,false);
 						}
 						rotateAngle(20,false);
-						leftMotor.rotate(720,true);    //go straight 1400 degrees
-						rightMotor.rotate(720,false);
+						leftMotor.rotate(AVOIDING_DIST,true);    //go straight 1400 degrees
+						rightMotor.rotate(AVOIDING_DIST,false);
 						
 						state = NavigatorState.navigating; //changes to the navigating state
 					}
