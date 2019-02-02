@@ -147,9 +147,9 @@ public class Navigation implements Runnable {
 			else if(state == NavigatorState.avoiding) {
 				//conditions to turn right
 				if(((robotPos[2]  >= 350 || robotPos[2] <= 10)  && (robotPos[0]<=10))  ||
-					((robotPos[2] >= 170 || robotPos[2] <= 190) && (robotPos[0]>= 51))  ||
-					((robotPos[2] >= 80  || robotPos[2] <= 100) && (robotPos[1]>= 51))  ||
-					((robotPos[2] >= 260 || robotPos[2] <= 280) && (robotPos[1]<=10)))
+					((robotPos[2] >= 170 && robotPos[2] <= 190) && (robotPos[0]>= 51))  ||
+					((robotPos[2] >= 80  && robotPos[2] <= 100) && (robotPos[1]>= 51))  ||
+					((robotPos[2] >= 260 && robotPos[2] <= 280) && (robotPos[1]<=10)))
 					{     
 					
 					rotateAngle(80, true);    //turn right 90 degrees
@@ -164,9 +164,9 @@ public class Navigation implements Runnable {
 				}
 				//conditions to turn left
 				else if(((robotPos[2] >= 350 || robotPos[2] <= 10)  && (robotPos[0]>= 51 && robotPos[0]<=71))  ||
-						((robotPos[2] >= 170 || robotPos[2] <= 190) && (robotPos[0]>=-10 && robotPos[0]<=10))  ||
-						((robotPos[2] >= 80  || robotPos[2] <= 100) && (robotPos[1]>=-10 && robotPos[1]<=10))  ||
-						((robotPos[2] >= 260 || robotPos[2] <= 280) && (robotPos[1]>= 51 && robotPos[1]<=71)))
+						((robotPos[2] >= 170 && robotPos[2] <= 190) && (robotPos[0]>=-10 && robotPos[0]<=10))  ||
+						((robotPos[2] >= 80  && robotPos[2] <= 100) && (robotPos[1]>=-10 && robotPos[1]<=10))  ||
+						((robotPos[2] >= 260 && robotPos[2] <= 280) && (robotPos[1]>= 51 && robotPos[1]<=71)))
 						{ 
 					
 					rotateAngle(80,false);   		//turn left 90 degrees
