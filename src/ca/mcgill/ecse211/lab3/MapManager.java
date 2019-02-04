@@ -10,6 +10,7 @@ import lejos.hardware.motor.NXTRegulatedMotor;
 import lejos.hardware.port.Port;
 import lejos.hardware.sensor.EV3UltrasonicSensor;
 import lejos.hardware.sensor.SensorModes;
+import lejos.robotics.RegulatedMotor;
 import lejos.robotics.SampleProvider;
 import lejos.utility.Timer;
 
@@ -20,66 +21,72 @@ import lejos.utility.Timer;
  * waypoint the robot should travel to next.
  * 
  * @author Julian Armour, Alice Kazarine
+ * @version 1.01
+ * @since 2018-02-04
  */
 public class MapManager {
-    // The list of waypoints for the robot to visit, represented as an array.
-    private static int[][] map;
-    // The left and right motors of the robot.
+    /** The left and right motors of the robot. */
     private static final EV3LargeRegulatedMotor leftMotor = new EV3LargeRegulatedMotor(LocalEV3.get().getPort("A"));
     private static final EV3LargeRegulatedMotor rightMotor = new EV3LargeRegulatedMotor(LocalEV3.get().getPort("B"));
-    // The motor used to oscillate the ultrasonic sensor.
+    /** The motor used to oscillate the ultrasonic sensor. */
     private static final NXTRegulatedMotor sweepMotor = new NXTRegulatedMotor(LocalEV3.get().getPort("D"));
-    //
+    /** The display of the EV3. */
     private static final TextLCD lcd = LocalEV3.get().getTextLCD();
+    /** The length of a tile. */
     public static final double TILE_SIZE = 30.48;
-    // The radius of the wheels in cm
+    /** The radius of the wheels in centimeters. */
     public static final double WHEEL_RAD = 2.1; // Radius increase = distance decrease
-    // The distance between both wheels in cm
-    public static final double TRACK = 11.0; // Width decrease = turn angle increase
-    private static final int MOTOR_ACCELERATION = 1000;
-
+    /** The distance between both wheels in centimeters */
+    public static final double TRACK = 10.9; // Width decrease = turn angle increase. 11.0
+    /** The acceleration of the motor */
+    private static final int MOTOR_ACCELERATION = 500;
+    /** The time elapsed between sensor samples in milliseconds. */
     private static final int DISTANCE_POLL_PERIOD = 100;
-
-    // defined port and sensor
+    /** The list of waypoints for the robot to visit, represented as an array. */
+    private static int[][] map;
+    /** The port used for the ultrasonic sensor */
     private static Port portUS;
+    /** The sensor mode of the ultrasonic sensor */
     private static SensorModes us;
+    /** The interface for polling samples from the ultrasonic sensor */
     private static SampleProvider distanceProvider;
+    /** The storage array for the ultrasonic sensor samples */
     private static float[] sampleUS;
-
-    // Odometer for keeping track of position
+    /** The class used for keeping track of the robot's position */
     private static Odometer odometer;
-    // ultrasonic sensor
+    /** The class responsible for gathering distance samples and filtering
+     * via a median filter.
+     */
     private static USSensor distanceSensor;
-
+    /** The class that handles navigation for the robot */
     private static Navigation navigator;
 
-    /**
-     * 
-     * @param args
-     * @throws OdometerExceptions
-     */
     public static void main(String[] args) throws OdometerExceptions {
+        int buttonChoice;
+        // setup motors
         leftMotor.setAcceleration(MOTOR_ACCELERATION);
         rightMotor.setAcceleration(MOTOR_ACCELERATION);
-
+        leftMotor.synchronizeWith(new RegulatedMotor[] {rightMotor});
+        // ultrasonic sensor setup
         portUS = LocalEV3.get().getPort("S2");
         us = new EV3UltrasonicSensor(portUS);
         distanceProvider = us.getMode("Distance");
-        sampleUS = new float[distanceProvider.sampleSize()];
-
-        int buttonChoice;
-
-        // setup odometer and start tracking
+        sampleUS = new float[distanceProvider.sampleSize()];        
+        // set up odometer
         odometer = Odometer.getOdometer(leftMotor, rightMotor, TRACK, WHEEL_RAD);
         Thread odoThread = new Thread(odometer);
+        // start odometer
         odoThread.start();
-
+        // display setup
         Display odometryDisplay = new Display(lcd);
-
+        
+        // set up navigation and distance sensor with median filter
         navigator = new Navigation(leftMotor, rightMotor, odometer, WHEEL_RAD, TRACK);
         distanceSensor = new USSensor(distanceProvider, sampleUS, navigator);
+        // setter injection needed because both objects are dependencies of one-another
         navigator.setDistanceSensor(distanceSensor);
-
+        
+        
         Timer distancePollerTimer = new Timer(DISTANCE_POLL_PERIOD, distanceSensor);
         distancePollerTimer.start();
 
