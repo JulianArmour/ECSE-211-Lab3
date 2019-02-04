@@ -119,7 +119,7 @@ public class Lab {
 		while (true) {
 			NavigatorState navState = navigator.getNavigationState();
 			
-			System.out.println(navState);
+//			System.out.println(navState);
 			
 			Thread navThread = new Thread(navigator);
 			Navigation.setNavThread(navThread);
