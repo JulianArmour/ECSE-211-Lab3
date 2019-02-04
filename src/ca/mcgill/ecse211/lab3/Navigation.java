@@ -6,8 +6,8 @@ import lejos.hardware.motor.EV3LargeRegulatedMotor;
 //
 public class Navigation implements Runnable {
 
-    private static final int ROTATE_SPEED = 45;
-    private static final int FORWARD_SPEED = 180;
+    private static final int ROTATE_SPEED = 150;
+    private static final int FORWARD_SPEED = 250;
     private static final int AVOIDING_DIST = 3 * 360; // how much the wheels rotate to avoid
     private static volatile NavigatorState state;
     private static Thread navThread;
@@ -39,6 +39,9 @@ public class Navigation implements Runnable {
         // System.out.println(heading);
         double dT = ((theta - heading + 360) % 360);
 
+        leftMotor.setSpeed(ROTATE_SPEED);
+        rightMotor.setSpeed(ROTATE_SPEED);
+
         if (dT < 180) {
             rotateAngle(dT, true);
             // leftMotor.rotate(convertAngle(wheelRadius, track, dT), true);
@@ -51,10 +54,6 @@ public class Navigation implements Runnable {
     }
 
     public void rotateAngle(double theta, boolean turnClockwise) {
-        
-        leftMotor.setSpeed(ROTATE_SPEED);
-        rightMotor.setSpeed(ROTATE_SPEED);
-        
         if (turnClockwise) {
             leftMotor.rotate(convertAngle(wheelRadius, track, theta), true);
             rightMotor.rotate(-convertAngle(wheelRadius, track, theta), false);
@@ -111,6 +110,8 @@ public class Navigation implements Runnable {
                 double dx = destination[0] - robotPos[0];
                 double dy = destination[1] - robotPos[1];
 
+                double distanceToWaypoint = Math.sqrt(dx * dx + dy * dy);
+
                 double angleToHead;
 
                 if (dy == 0.0) {
@@ -159,17 +160,15 @@ public class Navigation implements Runnable {
                         || ((robotPos[2] >= 80 && robotPos[2] <= 100) && (robotPos[1] >= 51))
                         || ((robotPos[2] >= 260 && robotPos[2] <= 280) && (robotPos[1] <= 10))) {
 
-                    rotateAngle(90, true); // turn right 90 degrees
-//                    leftMotor.rotate(AVOIDING_DIST, true); // go straight 1400 degrees
-//                    rightMotor.rotate(AVOIDING_DIST, false);
-                    driveForward(MapManager.TILE_SIZE * 1.5);
+                    rotateAngle(80, true); // turn right 90 degrees
+                    leftMotor.rotate(AVOIDING_DIST, true); // go straight 1400 degrees
+                    rightMotor.rotate(AVOIDING_DIST, false);
 
-                    rotateAngle(90, false);
-//                    leftMotor.rotate((int)(AVOIDING_DIST / 1.5), true); // go straight 1400 degrees
-//                    rightMotor.rotate((int)(AVOIDING_DIST / 1.5), false);
-                    driveForward(MapManager.TILE_SIZE);
-                    
+                    rotateAngle(80, false);
+                    leftMotor.rotate(AVOIDING_DIST / 2, true); // go straight 1400 degrees
+                    rightMotor.rotate(AVOIDING_DIST / 2, false);
                     state = NavigatorState.rotating; // changes to the navigating state
+
                 }
                 // conditions to turn left
                 else if (((robotPos[2] >= 350 || robotPos[2] <= 10) && (robotPos[0] >= 51))
@@ -177,16 +176,14 @@ public class Navigation implements Runnable {
                         || ((robotPos[2] >= 80 && robotPos[2] <= 100) && (robotPos[1] <= 10))
                         || ((robotPos[2] >= 260 && robotPos[2] <= 280) && (robotPos[1] >= 51))) {
 
-                    rotateAngle(90, false); // turn left 90 degrees
+                    rotateAngle(80, false); // turn left 90 degrees
 
-//                    leftMotor.rotate(AVOIDING_DIST, true); // go straight 1400 degrees
-//                    rightMotor.rotate(AVOIDING_DIST, false);
-                    driveForward(MapManager.TILE_SIZE * 1.5);
-                    
-                    rotateAngle(90, true);
-//                    leftMotor.rotate((int)(AVOIDING_DIST / 1.5), true); // go straight 1400 degrees
-//                    rightMotor.rotate((int)(AVOIDING_DIST / 1.5), false);
-                    driveForward(MapManager.TILE_SIZE);
+                    leftMotor.rotate(AVOIDING_DIST, true); // go straight 1400 degrees
+                    rightMotor.rotate(AVOIDING_DIST, false);
+
+                    rotateAngle(80, true);
+                    leftMotor.rotate(AVOIDING_DIST / 2, true); // go straight 1400 degrees
+                    rightMotor.rotate(AVOIDING_DIST / 2, false);
 
                     state = NavigatorState.rotating; // changes to the navigating state
 
@@ -197,14 +194,12 @@ public class Navigation implements Runnable {
                     if (usSensor.getFilteredDistance() >= 15) { // getfiltereddistance
                         rotateAngle(15, true);
 
-//                        leftMotor.rotate(AVOIDING_DIST, true); // go straight 1400 degrees
-//                        rightMotor.rotate(AVOIDING_DIST, false);
-                        driveForward(MapManager.TILE_SIZE * 1.5);
+                        leftMotor.rotate(AVOIDING_DIST, true); // go straight 1400 degrees
+                        rightMotor.rotate(AVOIDING_DIST, false);
 
-                        rotateAngle(55, false);
-//                        leftMotor.rotate(AVOIDING_DIST / 2, true); // go straight 1400 degrees
-//                        rightMotor.rotate(AVOIDING_DIST / 2, false);
-                        driveForward(MapManager.TILE_SIZE);
+                        rotateAngle(60, false);
+                        leftMotor.rotate(AVOIDING_DIST / 2, true); // go straight 1400 degrees
+                        rightMotor.rotate(AVOIDING_DIST / 2, false);
 
                         state = NavigatorState.rotating; // changes to the navigating state
                     } else {
@@ -212,14 +207,12 @@ public class Navigation implements Runnable {
                             rotateAngle(15, false);
                         }
                         rotateAngle(15, false);
-//                        leftMotor.rotate(AVOIDING_DIST, true); // go straight 1400 degrees
-//                        rightMotor.rotate(AVOIDING_DIST, false);
-                        driveForward(MapManager.TILE_SIZE * 1.5);
+                        leftMotor.rotate(AVOIDING_DIST, true); // go straight 1400 degrees
+                        rightMotor.rotate(AVOIDING_DIST, false);
 
-                        rotateAngle(55, true);
-//                        leftMotor.rotate(AVOIDING_DIST / 2, true); // go straight 1400 degrees
-//                        rightMotor.rotate(AVOIDING_DIST / 2, false);
-                        driveForward(MapManager.TILE_SIZE);
+                        rotateAngle(60, true);
+                        leftMotor.rotate(AVOIDING_DIST / 2, true); // go straight 1400 degrees
+                        rightMotor.rotate(AVOIDING_DIST / 2, false);
 
                         state = NavigatorState.rotating; // changes to the navigating state
                     }
@@ -277,8 +270,8 @@ public class Navigation implements Runnable {
         this.usSensor = distanceSensor;
     }
 
-    public static void setState(NavigatorState state) {
-        Navigation.state = state;
+    public void setState(NavigatorState state) {
+        this.state = state;
     }
 
 }
