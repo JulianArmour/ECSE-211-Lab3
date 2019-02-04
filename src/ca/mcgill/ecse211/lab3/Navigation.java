@@ -2,274 +2,276 @@ package ca.mcgill.ecse211.lab3;
 
 import ca.mcgill.ecse211.odometer.Odometer;
 import lejos.hardware.motor.EV3LargeRegulatedMotor;
+
 //
 public class Navigation implements Runnable {
 
-	private static final int ROTATE_SPEED = 150;
-	private static final int FORWARD_SPEED = 250;
-	private static final int AVOIDING_DIST = 3*360; //how much the wheels rotate to avoid
-	private static volatile NavigatorState state;
-	private static Thread navThread;
-	private double[] destination = {0.0, 0.0};
-	private EV3LargeRegulatedMotor leftMotor;
-	private EV3LargeRegulatedMotor rightMotor;
-	private Odometer odometer;
-	private double wheelRadius;
-	private double track;
-	private USSensor usSensor;
+    private static final int ROTATE_SPEED = 150;
+    private static final int FORWARD_SPEED = 250;
+    private static final int AVOIDING_DIST = 3 * 360; // how much the wheels rotate to avoid
+    private static volatile NavigatorState state;
+    private static Thread navThread;
+    private double[] destination = { 0.0, 0.0 };
+    private EV3LargeRegulatedMotor leftMotor;
+    private EV3LargeRegulatedMotor rightMotor;
+    private Odometer odometer;
+    private double wheelRadius;
+    private double track;
+    private USSensor usSensor;
 
-	public Navigation(EV3LargeRegulatedMotor leftMotor, EV3LargeRegulatedMotor rightMotor, Odometer odometer,
-			double wheelRadius, double track) {
-		this.leftMotor = leftMotor;
-		this.rightMotor = rightMotor;
-		this.odometer = odometer;
-		this.wheelRadius = wheelRadius;
-		this.track = track;
-		state = NavigatorState.start;
-	}
+    public Navigation(EV3LargeRegulatedMotor leftMotor, EV3LargeRegulatedMotor rightMotor, Odometer odometer,
+            double wheelRadius, double track) {
+        this.leftMotor = leftMotor;
+        this.rightMotor = rightMotor;
+        this.odometer = odometer;
+        this.wheelRadius = wheelRadius;
+        this.track = track;
+        state = NavigatorState.start;
+    }
 
-	public void travelTo(double x, double y) {
-//		System.out.println("moving to X: "+x+"\t Y: "+y);
-		destination[0] = x;
-		destination[1] = y;
-		state = NavigatorState.rotating;
-	}
+    public void travelTo(double x, double y) {
+        destination[0] = x;
+        destination[1] = y;
+    }
 
-	public void turnTo(double theta) {
-		double heading = odometer.getXYT()[2];
-		// System.out.println(heading);
-		double dT = ((theta - heading + 360) % 360);
+    public void turnTo(double theta) {
+        double heading = odometer.getXYT()[2];
+        // System.out.println(heading);
+        double dT = ((theta - heading + 360) % 360);
 
-		leftMotor.setSpeed(ROTATE_SPEED);
-		rightMotor.setSpeed(ROTATE_SPEED);
+        leftMotor.setSpeed(ROTATE_SPEED);
+        rightMotor.setSpeed(ROTATE_SPEED);
 
-		if (dT < 180) {
-			rotateAngle(dT, true);
-			// leftMotor.rotate(convertAngle(wheelRadius, track, dT), true);
-			// rightMotor.rotate(-convertAngle(wheelRadius, track, dT), false);
-		} else {
-			rotateAngle(360 - dT, false);
-			// leftMotor.rotate(-convertAngle(wheelRadius, track, 360-dT), true);
-			// rightMotor.rotate(convertAngle(wheelRadius, track, 360-dT), false);
-		}
-	}
+        if (dT < 180) {
+            rotateAngle(dT, true);
+            // leftMotor.rotate(convertAngle(wheelRadius, track, dT), true);
+            // rightMotor.rotate(-convertAngle(wheelRadius, track, dT), false);
+        } else {
+            rotateAngle(360 - dT, false);
+            // leftMotor.rotate(-convertAngle(wheelRadius, track, 360-dT), true);
+            // rightMotor.rotate(convertAngle(wheelRadius, track, 360-dT), false);
+        }
+    }
 
-	public void rotateAngle(double theta, boolean turnClockwise) {
-		if (turnClockwise) {
-			leftMotor.rotate(convertAngle(wheelRadius, track, theta), true);
-			rightMotor.rotate(-convertAngle(wheelRadius, track, theta), false);
-		} else {
-			leftMotor.rotate(-convertAngle(wheelRadius, track, theta), true);
-			rightMotor.rotate(convertAngle(wheelRadius, track, theta), false);
-		}
-	}
+    public void rotateAngle(double theta, boolean turnClockwise) {
+        if (turnClockwise) {
+            leftMotor.rotate(convertAngle(wheelRadius, track, theta), true);
+            rightMotor.rotate(-convertAngle(wheelRadius, track, theta), false);
+        } else {
+            leftMotor.rotate(-convertAngle(wheelRadius, track, theta), true);
+            rightMotor.rotate(convertAngle(wheelRadius, track, theta), false);
+        }
+    }
 
-	public NavigatorState getNavigationState() {
-		return state;
-	}
+    public NavigatorState getNavigationState() {
+        return state;
+    }
 
-	public boolean isNavigating() {
-		return state == NavigatorState.navigating;
-	}
+    public boolean isNavigating() {
+        return state == NavigatorState.navigating;
+    }
 
-	public void avoidObstacle() {
-		state = NavigatorState.avoiding;		
-		navThread.interrupt();
-		leftMotor.stop(true);
-		rightMotor.stop(false);
-	}
+    /**
+     * When avoidObstacle is called, it sets the navigator's state to Avoiding. Then
+     * interrupts the current navigation thread and stops both motors. The
+     * {@link MapManager} will then start a new navigation thread to {@link #run()}
+     * the avoidance algorithm.
+     * 
+     * @see #run()
+     * @see MapManager
+     */
+    public void avoidObstacle() {
+        state = NavigatorState.avoiding;
+        navThread.interrupt();
+        leftMotor.stop(true);
+        rightMotor.stop(false);
+    }
 
-	/*
-	 * run: move to destination by calling motor.rotate if reached final
-	 * destination, let main thread know interrupt: stops motor and corrects
-	 * 
-	 */
-	@Override
-	public void run() {
-		/*
-		 * If we're in state=avoiding: 1. check left, if clear then If we're in the
-		 * state=onWaypoint then calculate direction and distance, rotate, move If we're
-		 * in the state=onHold then change state to navigating
-		 *
-		 */
-		try {
-			double[] robotPos = odometer.getXYT();
-			
-			if (state == NavigatorState.rotating) {
-				double dx = destination[0] - robotPos[0];
-				double dy = destination[1] - robotPos[1];
+    /**
+     * Runs in a thread to perform navigation, avoidance, rotation depending on the
+     * current state of robot.
+     * <p>
+     * Rotating state: rotates the robot to the desired heading based on the robot's
+     * current position and it's current desired {@link Navigation#destination}.
+     * <p>
+     * Navigating state:
+     */
+    @Override
+    public void run() {
+        /*
+         * If we're in state=avoiding: 1. check left, if clear then If we're in the
+         * state=onWaypoint then calculate direction and distance, rotate, move If we're
+         * in the state=onHold then change state to navigating
+         */
+        try {
+            double[] robotPos = odometer.getXYT();
 
-				double distanceToWaypoint = Math.sqrt(dx * dx + dy * dy);
+            if (state == NavigatorState.rotating) {
+                double dx = destination[0] - robotPos[0];
+                double dy = destination[1] - robotPos[1];
 
-				double angleToHead;
+                double distanceToWaypoint = Math.sqrt(dx * dx + dy * dy);
 
-				if (dy == 0.0) {
-					if (dx >= 0) {
-						angleToHead = 90.0;
-					} else {
-						angleToHead = 270.0;
-					}
-				}
-				// first quadrant (0-90)
-				else if (dx >= 0.0 && dy > 0.0) {
-					angleToHead = Math.toDegrees(Math.atan(dx / dy));
-				}
-				// second quadrant (270-360)
-				else if (dx < 0.0 && dy > 0.0) {
-					angleToHead = 360.0 + Math.toDegrees(Math.atan(dx / dy));
-				}
-				// third and fourth quadrant (90-270)
-				else {
-					angleToHead = 180.0 + Math.toDegrees(Math.atan(dx / dy));
-				}
+                double angleToHead;
 
-				turnTo(angleToHead);
-				
-				if (state != NavigatorState.avoiding) {
-					state = NavigatorState.navigating;
-				}				
-			}			
-			else if (state == NavigatorState.navigating) {
-				double dx = destination[0] - robotPos[0];
-				double dy = destination[1] - robotPos[1];
+                if (dy == 0.0) {
+                    if (dx >= 0) {
+                        angleToHead = 90.0;
+                    } else {
+                        angleToHead = 270.0;
+                    }
+                }
+                // first quadrant (0-90)
+                else if (dx >= 0.0 && dy > 0.0) {
+                    angleToHead = Math.toDegrees(Math.atan(dx / dy));
+                }
+                // second quadrant (270-360)
+                else if (dx < 0.0 && dy > 0.0) {
+                    angleToHead = 360.0 + Math.toDegrees(Math.atan(dx / dy));
+                }
+                // third and fourth quadrant (90-270)
+                else {
+                    angleToHead = 180.0 + Math.toDegrees(Math.atan(dx / dy));
+                }
 
-				double distanceToWaypoint = Math.sqrt(dx * dx + dy * dy);
-				
-				// poll data for 1/4 second
-				Thread.sleep(250);
+                turnTo(angleToHead);
 
-				driveForward(distanceToWaypoint);
-				
-				if (state != NavigatorState.avoiding) {
-					state = NavigatorState.atWaypoint;
-				}				
-			}
-			else if(state == NavigatorState.avoiding) {
-				//conditions to turn right
-				if(((robotPos[2]  >= 350 || robotPos[2] <= 10)  && (robotPos[0]<=10))  ||
-					((robotPos[2] >= 170 && robotPos[2] <= 190) && (robotPos[0]>= 51))  ||
-					((robotPos[2] >= 80  && robotPos[2] <= 100) && (robotPos[1]>= 51))  ||
-					((robotPos[2] >= 260 && robotPos[2] <= 280) && (robotPos[1]<=10)))
-					{
-					
-					rotateAngle(80, true);    //turn right 90 degrees
-					leftMotor.rotate(AVOIDING_DIST,true);    //go straight 1400 degrees
-					rightMotor.rotate(AVOIDING_DIST,false);
-					
-					rotateAngle(80, false);
-					leftMotor.rotate(AVOIDING_DIST/2,true);    //go straight 1400 degrees
-					rightMotor.rotate(AVOIDING_DIST/2,false);					
-					state = NavigatorState.rotating; //changes to the navigating state
-					
-				}
-				//conditions to turn left
-				else if(((robotPos[2] >= 350 || robotPos[2] <= 10)  && (robotPos[0]>= 51)) ||
-						((robotPos[2] >= 170 && robotPos[2] <= 190) && (robotPos[0]<=10))  ||
-						((robotPos[2] >= 80  && robotPos[2] <= 100) && (robotPos[1]<=10))  ||
-						((robotPos[2] >= 260 && robotPos[2] <= 280) && (robotPos[1]>= 51)))
-						{ 
-					
-					rotateAngle(80,false);   		//turn left 90 degrees
-					
-					leftMotor.rotate(AVOIDING_DIST,true);    //go straight 1400 degrees
-					rightMotor.rotate(AVOIDING_DIST,false);
-					
-					rotateAngle(80, true);
-					leftMotor.rotate(AVOIDING_DIST/2,true);    //go straight 1400 degrees
-					rightMotor.rotate(AVOIDING_DIST/2,false);
-					
-					state = NavigatorState.rotating; //changes to the navigating state
-					
-				}
-				else {
-					System.out.println("Decision 3");
-					rotateAngle(40,true);
-					// gather ~10 samples
-					Thread.sleep(1000);
-					if (usSensor.getFilteredDistance() >= 15){ //getfiltereddistance
-						rotateAngle(15,true);
-						
-						leftMotor.rotate(AVOIDING_DIST,true);    //go straight 1400 degrees
-						rightMotor.rotate(AVOIDING_DIST,false);
-						
-						rotateAngle(60, false);
-						leftMotor.rotate(AVOIDING_DIST/2,true);    //go straight 1400 degrees
-						rightMotor.rotate(AVOIDING_DIST/2,false);
-						
-						state = NavigatorState.rotating; //changes to the navigating state
-					}
-					else {
-						while(usSensor.getFilteredDistance() < 15) {
-						rotateAngle(15,false);
-						}
-						rotateAngle(15,false);
-						leftMotor.rotate(AVOIDING_DIST,true);    //go straight 1400 degrees
-						rightMotor.rotate(AVOIDING_DIST,false);
-						
-						rotateAngle(60, true);
-						leftMotor.rotate(AVOIDING_DIST/2,true);    //go straight 1400 degrees
-						rightMotor.rotate(AVOIDING_DIST/2,false);
-						
-						state = NavigatorState.rotating; //changes to the navigating state
-					}
-					
-				}
-			}
-		} catch (InterruptedException e) {
-//			System.out.println("Stoping motors");
-//			leftMotor.stop(true);
-//			rightMotor.stop(false);
-		}
-	}
+                if (state != NavigatorState.avoiding) {
+                    state = NavigatorState.navigating;
+                }
+            } else if (state == NavigatorState.navigating) {
+                double dx = destination[0] - robotPos[0];
+                double dy = destination[1] - robotPos[1];
 
-	private void driveForward(double distanceToWaypoint) {
-		leftMotor.setSpeed(FORWARD_SPEED);
-		rightMotor.setSpeed(FORWARD_SPEED);
+                double distanceToWaypoint = Math.sqrt(dx * dx + dy * dy);
 
-		leftMotor.rotate(convertDistance(wheelRadius, distanceToWaypoint), true);
-		rightMotor.rotate(convertDistance(wheelRadius, distanceToWaypoint), false);
-	}
+                // poll data for 1/4 second
+                Thread.sleep(250);
 
-	/**
-	 * This method allows the conversion of a distance to the total rotation of each
-	 * wheel need to cover that distance.
-	 * 
-	 * @param radius
-	 * @param distance
-	 * @return
-	 */
-	private static int convertDistance(double radius, double distance) {
-		return (int) ((180.0 * distance) / (Math.PI * radius));
-	}
+                driveForward(distanceToWaypoint);
 
-	/**
-	 * @param radius
-	 *            radius of the wheels
-	 * @param width
-	 *            distance between the wheels
-	 * @param angle
-	 *            the angle the robot should turn
-	 * @return the angle in degrees the wheels must rotate to turn the robot a
-	 *         certain angle
-	 */
-	private static int convertAngle(double radius, double width, double angle) {
-		return convertDistance(radius, Math.PI * width * angle / 360.0);
-	}
+                if (state != NavigatorState.avoiding) {
+                    state = NavigatorState.atWaypoint;
+                }
+            } else if (state == NavigatorState.avoiding) {
+                // conditions to turn right
+                if (((robotPos[2] >= 350 || robotPos[2] <= 10) && (robotPos[0] <= 10))
+                        || ((robotPos[2] >= 170 && robotPos[2] <= 190) && (robotPos[0] >= 51))
+                        || ((robotPos[2] >= 80 && robotPos[2] <= 100) && (robotPos[1] >= 51))
+                        || ((robotPos[2] >= 260 && robotPos[2] <= 280) && (robotPos[1] <= 10))) {
 
-	public static Thread getNavThread() {
-		return navThread;
-	}
+                    rotateAngle(80, true); // turn right 90 degrees
+                    leftMotor.rotate(AVOIDING_DIST, true); // go straight 1400 degrees
+                    rightMotor.rotate(AVOIDING_DIST, false);
 
-	public static void setNavThread(Thread navThread) {
-		Navigation.navThread = navThread;
-	}
+                    rotateAngle(80, false);
+                    leftMotor.rotate(AVOIDING_DIST / 2, true); // go straight 1400 degrees
+                    rightMotor.rotate(AVOIDING_DIST / 2, false);
+                    state = NavigatorState.rotating; // changes to the navigating state
 
-	public void setDistanceSensor(USSensor distanceSensor) {
-		this.usSensor = distanceSensor;
-	}
+                }
+                // conditions to turn left
+                else if (((robotPos[2] >= 350 || robotPos[2] <= 10) && (robotPos[0] >= 51))
+                        || ((robotPos[2] >= 170 && robotPos[2] <= 190) && (robotPos[0] <= 10))
+                        || ((robotPos[2] >= 80 && robotPos[2] <= 100) && (robotPos[1] <= 10))
+                        || ((robotPos[2] >= 260 && robotPos[2] <= 280) && (robotPos[1] >= 51))) {
 
-	public void setState(NavigatorState state) {
-		this.state = state;
-	}
+                    rotateAngle(80, false); // turn left 90 degrees
+
+                    leftMotor.rotate(AVOIDING_DIST, true); // go straight 1400 degrees
+                    rightMotor.rotate(AVOIDING_DIST, false);
+
+                    rotateAngle(80, true);
+                    leftMotor.rotate(AVOIDING_DIST / 2, true); // go straight 1400 degrees
+                    rightMotor.rotate(AVOIDING_DIST / 2, false);
+
+                    state = NavigatorState.rotating; // changes to the navigating state
+
+                } else {
+                    rotateAngle(40, true);
+                    // gather ~10 samples
+                    Thread.sleep(1000);
+                    if (usSensor.getFilteredDistance() >= 15) { // getfiltereddistance
+                        rotateAngle(15, true);
+
+                        leftMotor.rotate(AVOIDING_DIST, true); // go straight 1400 degrees
+                        rightMotor.rotate(AVOIDING_DIST, false);
+
+                        rotateAngle(60, false);
+                        leftMotor.rotate(AVOIDING_DIST / 2, true); // go straight 1400 degrees
+                        rightMotor.rotate(AVOIDING_DIST / 2, false);
+
+                        state = NavigatorState.rotating; // changes to the navigating state
+                    } else {
+                        while (usSensor.getFilteredDistance() < 15) {
+                            rotateAngle(15, false);
+                        }
+                        rotateAngle(15, false);
+                        leftMotor.rotate(AVOIDING_DIST, true); // go straight 1400 degrees
+                        rightMotor.rotate(AVOIDING_DIST, false);
+
+                        rotateAngle(60, true);
+                        leftMotor.rotate(AVOIDING_DIST / 2, true); // go straight 1400 degrees
+                        rightMotor.rotate(AVOIDING_DIST / 2, false);
+
+                        state = NavigatorState.rotating; // changes to the navigating state
+                    }
+
+                }
+            }
+        } catch (InterruptedException e) {
+
+        }
+    }
+
+    private void driveForward(double distanceToWaypoint) {
+        leftMotor.setSpeed(FORWARD_SPEED);
+        rightMotor.setSpeed(FORWARD_SPEED);
+
+        leftMotor.rotate(convertDistance(wheelRadius, distanceToWaypoint), true);
+        rightMotor.rotate(convertDistance(wheelRadius, distanceToWaypoint), false);
+    }
+
+    /**
+     * This method allows the conversion of a distance to the total rotation of each
+     * wheel need to cover that distance.
+     * 
+     * @param radius
+     * @param distance
+     * @return
+     */
+    private static int convertDistance(double radius, double distance) {
+        return (int) ((180.0 * distance) / (Math.PI * radius));
+    }
+
+    /**
+     * @param radius
+     *            radius of the wheels
+     * @param width
+     *            distance between the wheels
+     * @param angle
+     *            the angle the robot should turn
+     * @return the angle in degrees the wheels must rotate to turn the robot a
+     *         certain angle
+     */
+    private static int convertAngle(double radius, double width, double angle) {
+        return convertDistance(radius, Math.PI * width * angle / 360.0);
+    }
+
+    public static Thread getNavThread() {
+        return navThread;
+    }
+
+    public static void setNavThread(Thread navThread) {
+        Navigation.navThread = navThread;
+    }
+
+    public void setDistanceSensor(USSensor distanceSensor) {
+        this.usSensor = distanceSensor;
+    }
+
+    public void setState(NavigatorState state) {
+        this.state = state;
+    }
 
 }
