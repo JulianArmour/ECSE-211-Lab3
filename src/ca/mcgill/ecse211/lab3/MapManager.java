@@ -22,81 +22,87 @@ import lejos.utility.Timer;
  * @author Julian Armour, Alice Kazarine
  */
 public class MapManager {
-    // The list of waypoints for the robot to visit, represented as an array.
+    /** The array of map waypoints */
     private static int[][] map;
-    // The left and right motors of the robot.
+    /** The left motor of the robot.*/
     private static final EV3LargeRegulatedMotor leftMotor = new EV3LargeRegulatedMotor(LocalEV3.get().getPort("A"));
+    /** The right motor of the robot.*/
     private static final EV3LargeRegulatedMotor rightMotor = new EV3LargeRegulatedMotor(LocalEV3.get().getPort("B"));
-    // The motor used to oscillate the ultrasonic sensor.
+    /** The motor used to oscillate the ultrasonic sensor.*/
     private static final NXTRegulatedMotor sweepMotor = new NXTRegulatedMotor(LocalEV3.get().getPort("D"));
-    //
+    /** The EV3's screen.*/
     private static final TextLCD lcd = LocalEV3.get().getTextLCD();
+    /** The tile's length.*/
     public static final double TILE_SIZE = 30.48;
-    // The radius of the wheels in cm
+    /** The radius of the wheel.*/
     public static final double WHEEL_RAD = 2.1; // Radius increase = distance decrease
-    // The distance between both wheels in cm
+    /** The length of the track.*/
     public static final double TRACK = 11.0; // Width decrease = turn angle increase
+    /** The acceleration of the motors*/
     private static final int MOTOR_ACCELERATION = 1000;
-
+    /** The period between ultrasensor samples*/
     private static final int DISTANCE_POLL_PERIOD = 100;
 
     // defined port and sensor
     private static Port portUS;
     private static SensorModes us;
+    /** The interface for the ultrasonic sensor*/
     private static SampleProvider distanceProvider;
+    /** The array for storing samples from the ultrasonic sensor*/
     private static float[] sampleUS;
-
-    // Odometer for keeping track of position
+    /** The class that tracks the position and heading of the robot*/
     private static Odometer odometer;
-    // ultrasonic sensor
+    /** The class that drives the ultrasonic sensor and filters the data using a median filter*/
     private static USSensor distanceSensor;
-
+    /** The class that handles all navigation requests and robot movements*/
     private static Navigation navigator;
 
-    /**
-     * 
-     * @param args
-     * @throws OdometerExceptions
-     */
     public static void main(String[] args) throws OdometerExceptions {
         leftMotor.setAcceleration(MOTOR_ACCELERATION);
         rightMotor.setAcceleration(MOTOR_ACCELERATION);
-
+        
+        // setup ultrasonic sensor
         portUS = LocalEV3.get().getPort("S2");
         us = new EV3UltrasonicSensor(portUS);
         distanceProvider = us.getMode("Distance");
         sampleUS = new float[distanceProvider.sampleSize()];
-
+        
+        // which button was pressed at the begining of the program
         int buttonChoice;
-
+        
         // setup odometer and start tracking
         odometer = Odometer.getOdometer(leftMotor, rightMotor, TRACK, WHEEL_RAD);
         Thread odoThread = new Thread(odometer);
         odoThread.start();
-
+        
+        // prepare the display for the odometer
         Display odometryDisplay = new Display(lcd);
 
+        // set up navigator and filtered ultrasonic sensor
         navigator = new Navigation(leftMotor, rightMotor, odometer, WHEEL_RAD, TRACK);
         distanceSensor = new USSensor(distanceProvider, sampleUS, navigator);
+        // setter injection to deal with mutual dependency
         navigator.setDistanceSensor(distanceSensor);
 
+        // create and start a timer for polling distances and filtering
         Timer distancePollerTimer = new Timer(DISTANCE_POLL_PERIOD, distanceSensor);
         distancePollerTimer.start();
-
+        
+        // start the oscillation for the motor that holds the ultrasonic sensor
         SensorSweeper sweeper = new SensorSweeper(sweepMotor);
         sweeper.start();
 
         do {
-            // clear the display
+            // clear whatever is on the screen
             lcd.clear();
 
-            // ask the user whether the motors should drive in a square or float
+            // Menu for choosing which map to navigate
             lcd.drawString("^ Up    | Map 1", 0, 0);
             lcd.drawString("> Right | Map 2", 0, 1);
             lcd.drawString("v Down  | Map 3", 0, 2);
             lcd.drawString("< Left  | Map 4", 0, 3);
 
-            buttonChoice = Button.waitForAnyPress(); // Record choice (left or right press)
+            buttonChoice = Button.waitForAnyPress();
         } while (buttonChoice != Button.ID_LEFT && buttonChoice != Button.ID_RIGHT && buttonChoice != Button.ID_DOWN
                 && buttonChoice != Button.ID_UP);
 
@@ -142,11 +148,14 @@ public class MapManager {
                 navigator.setState(NavigatorState.rotating);
                 navState = NavigatorState.rotating;
             }
+            // if the robot detects an obstacle
             if (navState == NavigatorState.rotating) {
                 double destX = map[currentWaypoint][0] * TILE_SIZE;
                 double destY = map[currentWaypoint][1] * TILE_SIZE;
                 navigator.travelTo(destX, destY);
-            } else if (navState == NavigatorState.atWaypoint) {
+            } 
+            // if the robot is on a waypoint, load the next waypoint in the array
+            else if (navState == NavigatorState.atWaypoint) {
                 currentWaypoint++;
                 if (currentWaypoint < map.length) {
                     double destX = map[currentWaypoint][0] * TILE_SIZE;
@@ -154,28 +163,28 @@ public class MapManager {
 
                     navigator.setState(NavigatorState.rotating);
                     navigator.travelTo(destX, destY);
-                } else {
+                } 
+                // when there aren't any more waypoints, move into terminating state
+                else {
                     navigator.setState(NavigatorState.end);
                     break;
                 }
             }
-
+            /* after macro level waypoint management, let the navigator handle
+             * the micro movements of how to get to the waypoint, or avoid an
+             * obstacle.
+             */
             navThread.start();
 
             // wait for navigation to end or if an obstacle presents itself
             try {
                 navThread.join();
             } catch (InterruptedException e) {
-                System.out.println("Houston we have a problem.");
+                System.out.println("Main thread was interrupted");
             }
         }
 
-        // navigator.turnTo(170);
-        // navigator.turnTo(60);
-        // navigator.rotateAngle(90, false);
-
-        while (Button.waitForAnyPress() != Button.ID_ESCAPE)
-            ;
+        while (Button.waitForAnyPress() != Button.ID_ESCAPE);
         System.exit(0);
     }
 }
