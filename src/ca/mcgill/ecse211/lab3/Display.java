@@ -18,9 +18,10 @@ public class Display implements Runnable {
     private long timeout = Long.MAX_VALUE;
 
     /**
-     * This is the class constructor
+     * Constructs a {@link Display} object with default values.
      * 
-     * @param odoData
+     * @param lcd the EV3's LCD screen
+     * 
      * @throws OdometerExceptions
      */
     public Display(TextLCD lcd) throws OdometerExceptions {
@@ -29,10 +30,10 @@ public class Display implements Runnable {
     }
 
     /**
-     * This is the overloaded class constructor
      * 
-     * @param odoData
-     * @throws OdometerExceptions
+     * @param lcd      The handle for the screen of the EV3
+     * @param timeout  The period for how often the display is updated
+     * @throws OdometerExceptions   
      */
     public Display(TextLCD lcd, long timeout) throws OdometerExceptions {
         odo = Odometer.getOdometer();

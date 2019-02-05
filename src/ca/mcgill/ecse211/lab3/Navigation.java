@@ -296,12 +296,12 @@ public class Navigation implements Runnable {
 
     /**
      * @param radius
-     *            radius of the wheels
+     *            The radius of the wheels
      * @param width
-     *            distance between the wheels
+     *            The distance between the wheels
      * @param angle
-     *            the angle the robot should turn
-     * @return the angle in degrees the wheels must rotate to turn the robot a
+     *            The angle the robot should turn
+     * @return The angle in degrees the wheels must rotate to turn the robot a
      *         certain angle
      */
     private static int convertAngle(double radius, double width, double angle) {
